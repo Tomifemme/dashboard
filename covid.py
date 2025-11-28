@@ -103,8 +103,23 @@ def main():
         c1 = st.sidebar.selectbox("Primary Country", all_countries)
         c2 = st.sidebar.selectbox("Comparison Country", all_countries, index=all_countries.index("Italy") if "Italy" in all_countries else 1)
         metric = st.sidebar.selectbox("Metric", ["New_cases", "New_deaths"])
-        date_min, date_max = df["Date_reported"].min(), df["Date_reported"].max()
-        date_range = st.sidebar.slider("Date Range", min_value=date_min.date(), max_value=date_max.date(), value=(date_min.date(), date_max.date()))
+
+        # Ensure we have native python date objects for the Streamlit slider.
+        date_min_ts = df["Date_reported"].min()
+        date_max_ts = df["Date_reported"].max()
+        if pd.isna(date_min_ts) or pd.isna(date_max_ts):
+            st.error("No valid dates found in the dataset. Check that 'Date_reported' column exists and contains dates.")
+            st.stop()
+
+        date_min = pd.to_datetime(date_min_ts).date()
+        date_max = pd.to_datetime(date_max_ts).date()
+
+        date_range = st.sidebar.slider(
+            "Date Range",
+            min_value=date_min,
+            max_value=date_max,
+            value=(date_min, date_max),
+        )
 
         mask = (df["Date"] >= date_range[0]) & (df["Date"] <= date_range[1])
         df_f = df[mask]
