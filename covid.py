@@ -64,6 +64,14 @@ def load_data():
 
 def preprocess(df):
     df = df.copy()
+    # Ensure a valid Country column exists
+    if "Country" not in df.columns:
+        # try to automatically detect any column containing 'country'
+        country_cols = [c for c in df.columns if "country" in c.lower()]
+        if country_cols:
+            df["Country"] = df[country_cols[0]]
+        else:
+            df["Country"] = "Unknown"
     df["Date"] = pd.to_datetime(df["Date_reported"], errors="coerce").dt.date
     for col in ["New_cases", "New_deaths", "Cumulative_cases", "Cumulative_deaths"]:
         if col in df.columns:
