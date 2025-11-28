@@ -76,6 +76,8 @@ def preprocess(df):
     for col in ["New_cases", "New_deaths", "Cumulative_cases", "Cumulative_deaths"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+    # Clean Country column to prevent empty/NaN errors
+    df["Country"] = df["Country"].fillna("Unknown").astype(str).str.strip()
     return df
 
 
