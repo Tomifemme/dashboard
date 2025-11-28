@@ -1,14 +1,66 @@
+import os
 import streamlit as st
 import pandas as pd
 import altair as alt
 
 st.set_page_config(layout="wide", page_title="WHO COVID‑19 — Health Analytics Dashboard")
 
+
 @st.cache_data
 def load_data():
-    df = pd.read_csv("WHO-COVID-19-global-data.csv", parse_dates=["Date_reported"])
-    df.columns = [c.strip() for c in df.columns]
-    return df
+    """Load WHO data with a few fallbacks to avoid FileNotFound on Streamlit Cloud.
+
+    Order of attempts:
+    1. Local filename in working directory
+    2. File next to this script (repo root when deployed)
+    3. URL from environment variable DATA_URL
+    4. Raw GitHub URL for this repo (useful if you keep the CSV in the repo)
+
+    If all attempts fail, show a friendly message in the app and stop.
+    """
+    filename = "WHO-COVID-19-global-data.csv"
+
+    # 1) Try local working directory
+    try_paths = [filename]
+
+    # 2) Try file located next to this script (common when deployed)
+    try_paths.append(os.path.join(os.path.dirname(__file__), filename))
+
+    # 3) Try environment override (useful for deployments)
+    env_url = os.environ.get("DATA_URL")
+    if env_url:
+        try_paths.append(env_url)
+
+    # try each path/URL
+    for p in try_paths:
+        try:
+            df = pd.read_csv(p, parse_dates=["Date_reported"]) if p.startswith("http") else pd.read_csv(p, parse_dates=["Date_reported"])
+            df.columns = [c.strip() for c in df.columns]
+            return df
+        except FileNotFoundError:
+            # try next path
+            continue
+        except Exception as e:
+            # If it's a URL/network or parse issue, show it so it's easier to debug
+            st.error(f"Error reading data from {p}: {e}")
+            st.stop()
+
+    # 4) Final fallback: try raw file from this GitHub repo (update if you moved the CSV)
+    github_raw = "https://raw.githubusercontent.com/Tomifemme/dashboard/main/WHO-COVID-19-global-data.csv"
+    try:
+        df = pd.read_csv(github_raw, parse_dates=["Date_reported"])
+        df.columns = [c.strip() for c in df.columns]
+        return df
+    except Exception:
+        st.error(
+            "Data file 'WHO-COVID-19-global-data.csv' not found.\n"
+            "Fix options:\n"
+            " - Add the CSV to the repository root and push to GitHub.\n"
+            " - Set the DATA_URL environment variable to a public CSV URL.\n"
+            " - Use Streamlit's file uploader to upload the CSV at runtime.\n"
+        )
+        st.info("If you want, I can add the CSV file to the repo for you. Or set DATA_URL in Streamlit Cloud settings.")
+        st.stop()
 
 def preprocess(df):
     df = df.copy()
