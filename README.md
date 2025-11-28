@@ -3,6 +3,7 @@
 This repository contains `covid.py`, a Streamlit dashboard that visualizes WHO COVID-19 global data.
 
 Files:
+
 - `covid.py` — Streamlit app (main file)
 
 How to run locally:

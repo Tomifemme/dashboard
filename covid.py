@@ -64,7 +64,7 @@ def load_data():
 
 def preprocess(df):
     df = df.copy()
-    df["Date"] = pd.to_datetime(df["Date_reported"]).dt.date
+    df["Date"] = pd.to_datetime(df["Date_reported"], errors="coerce").dt.date
     for col in ["New_cases", "New_deaths", "Cumulative_cases", "Cumulative_deaths"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
